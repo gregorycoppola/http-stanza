@@ -20,7 +20,22 @@ def redis_mock():
 @pytest.fixture(scope="function")
 def sample_annotation():
     return {
-        "text": "The quick brown fox jumps over the lazy dog."
+        "version": {
+            "version_id": "test-id",  # Will be overwritten by service
+            "sentence": {
+                "text": "The quick brown fox jumps over the lazy dog.",
+                "tokens": [
+                    {
+                        "id": 0,
+                        "text": "The",
+                        "pos": "DET",
+                        "head": 1,
+                        "dep": "det"
+                    }
+                ]
+            },
+            "created_at": "2024-01-01T00:00:00"  # Will be overwritten by service
+        }
     }
 
 @pytest.fixture(scope="function")

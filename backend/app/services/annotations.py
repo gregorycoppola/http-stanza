@@ -23,29 +23,25 @@ def parse_text(text: str) -> SentenceParse:
         ))
     return SentenceParse(text=text, tokens=tokens)
 
-def create_annotation(text: str) -> tuple[str, AnnotationVersion]:
+def create_annotation(version: AnnotationVersion) -> tuple[str, AnnotationVersion]:
     annotation_id = str(uuid.uuid4())
-    version_id = str(uuid.uuid4())
     
-    sentence = parse_text(text)
-    annotation_version = AnnotationVersion(
-        version_id=version_id,
-        sentence=sentence,
-        created_at=datetime.utcnow()
-    )
+    # Ensure the version has a unique ID and timestamp
+    version.version_id = str(uuid.uuid4())
+    version.created_at = datetime.utcnow()
     
     # Store the annotation
     key = f"{ANNOTATION_PREFIX}:{annotation_id}"
-    redis_client.set(key, annotation_version.json())
+    redis_client.set(key, version.json())
     
     # Add to the set of all annotations
     redis_client.sadd(ANNOTATION_PREFIX, annotation_id)
     
     # Store version history
     versions_key = f"{key}:versions"
-    redis_client.lpush(versions_key, annotation_version.json())
+    redis_client.lpush(versions_key, version.json())
     
-    return annotation_id, annotation_version
+    return annotation_id, version
 
 def get_annotation(annotation_id: str) -> Optional[AnnotationVersion]:
     key = f"{ANNOTATION_PREFIX}:{annotation_id}"

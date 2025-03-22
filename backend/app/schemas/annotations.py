@@ -4,7 +4,7 @@ from datetime import datetime
 from ..models.annotations import Token, SentenceParse, AnnotationVersion
 
 class CreateAnnotationRequest(BaseModel):
-    text: str
+    version: AnnotationVersion
 
 class AnnotationResponse(BaseModel):
     annotation_id: str

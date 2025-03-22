@@ -12,7 +12,7 @@ router = APIRouter(prefix="/annotations", tags=["annotations"])
 
 @router.post("/", response_model=AnnotationResponse)
 async def create_new_annotation(request: CreateAnnotationRequest):
-    annotation_id, version = annotations.create_annotation(request.text)
+    annotation_id, version = annotations.create_annotation(request.version)
     return AnnotationResponse(
         annotation_id=annotation_id,
         latest_version=version

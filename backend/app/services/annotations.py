@@ -34,10 +34,16 @@ def create_annotation(text: str) -> tuple[str, AnnotationVersion]:
         created_at=datetime.utcnow()
     )
     
+    # Store the annotation
     key = f"{ANNOTATION_PREFIX}:{annotation_id}"
     redis_client.set(key, annotation_version.json())
-    redis_client.sadd(f"{ANNOTATION_PREFIX}", annotation_id)
-    redis_client.lpush(f"{key}:versions", annotation_version.json())
+    
+    # Add to the set of all annotations
+    redis_client.sadd(ANNOTATION_PREFIX, annotation_id)
+    
+    # Store version history
+    versions_key = f"{key}:versions"
+    redis_client.lpush(versions_key, annotation_version.json())
     
     return annotation_id, annotation_version
 
@@ -60,25 +66,36 @@ def update_annotation(annotation_id: str, text: str) -> Optional[AnnotationVersi
         created_at=datetime.utcnow()
     )
     
+    # Update the current version
     key = f"{ANNOTATION_PREFIX}:{annotation_id}"
     redis_client.set(key, annotation_version.json())
-    redis_client.lpush(f"{key}:versions", annotation_version.json())
+    
+    # Add to version history
+    versions_key = f"{key}:versions"
+    redis_client.lpush(versions_key, annotation_version.json())
     
     return annotation_version
 
 def delete_annotation(annotation_id: str) -> bool:
     key = f"{ANNOTATION_PREFIX}:{annotation_id}"
     if redis_client.exists(key):
+        # Delete the annotation
         redis_client.delete(key)
-        redis_client.srem(f"{ANNOTATION_PREFIX}", annotation_id)
-        redis_client.delete(f"{key}:versions")
+        
+        # Remove from the set of all annotations
+        redis_client.srem(ANNOTATION_PREFIX, annotation_id)
+        
+        # Delete version history
+        versions_key = f"{key}:versions"
+        redis_client.delete(versions_key)
+        
         return True
     return False
 
 def list_annotation_versions(annotation_id: str) -> List[AnnotationVersion]:
-    key = f"{ANNOTATION_PREFIX}:{annotation_id}:versions"
-    versions = redis_client.lrange(key, 0, -1)
+    versions_key = f"{ANNOTATION_PREFIX}:{annotation_id}:versions"
+    versions = redis_client.lrange(versions_key, 0, -1)
     return [AnnotationVersion.parse_raw(v) for v in versions]
 
 def list_annotations() -> List[str]:
-    return list(redis_client.smembers(f"{ANNOTATION_PREFIX}")) 
+    return list(redis_client.smembers(ANNOTATION_PREFIX)) 

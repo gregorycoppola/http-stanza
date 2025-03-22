@@ -36,10 +36,4 @@ def sample_annotation():
             },
             "created_at": "2024-01-01T00:00:00"  # Will be overwritten by service
         }
-    }
-
-@pytest.fixture(scope="function")
-def sample_parse_request():
-    return {
-        "text": "The quick brown fox jumps over the lazy dog."
     } 

@@ -8,7 +8,14 @@ from spacy import load
 from spacy import displacy
 
 nlp = load("en_core_web_sm")
-ANNOTATION_PREFIX = "http-stanza:annotations"
+ANNOTATION_PREFIX = "http-stanza"
+
+def normalize_sentence(text: str) -> str:
+    return " ".join(text.strip().split())
+
+def sentence_key(text: str) -> str:
+    norm = normalize_sentence(text)
+    return f"{ANNOTATION_PREFIX}:sentence:{norm}"
 
 def parse_text(text: str) -> SentenceParse:
     doc = nlp(text)
@@ -23,25 +30,16 @@ def parse_text(text: str) -> SentenceParse:
         ))
     return SentenceParse(text=text, tokens=tokens)
 
-def create_annotation(version: AnnotationVersion) -> tuple[str, AnnotationVersion]:
-    annotation_id = str(uuid.uuid4())
-    
-    # Ensure the version has a unique ID and timestamp
+def create_annotation(version: AnnotationVersion) -> AnnotationVersion:
+    # Ensure version has required fields
     version.version_id = str(uuid.uuid4())
     version.created_at = datetime.utcnow()
     
-    # Store the annotation
-    key = f"{ANNOTATION_PREFIX}:{annotation_id}"
-    redis_client.set(key, version.json())
+    # Store using normalized sentence as key
+    key = sentence_key(version.sentence.text)
+    redis_client.lpush(key, version.json())
     
-    # Add to the set of all annotations
-    redis_client.sadd(ANNOTATION_PREFIX, annotation_id)
-    
-    # Store version history
-    versions_key = f"{key}:versions"
-    redis_client.lpush(versions_key, version.json())
-    
-    return annotation_id, version
+    return version
 
 def get_annotation(annotation_id: str) -> Optional[AnnotationVersion]:
     key = f"{ANNOTATION_PREFIX}:{annotation_id}"
@@ -94,4 +92,9 @@ def list_annotation_versions(annotation_id: str) -> List[AnnotationVersion]:
     return [AnnotationVersion.parse_raw(v) for v in versions]
 
 def list_annotations() -> List[str]:
-    return list(redis_client.smembers(ANNOTATION_PREFIX)) 
+    return list(redis_client.smembers(ANNOTATION_PREFIX))
+
+def get_annotations_by_sentence(text: str) -> List[AnnotationVersion]:
+    key = sentence_key(text)
+    versions = redis_client.lrange(key, 0, -1)
+    return [AnnotationVersion.parse_raw(v) for v in versions] 

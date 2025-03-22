@@ -1,22 +1,28 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import List
 from datetime import datetime
-from ..models.annotations import Token, SentenceParse, AnnotationVersion
+
+class Token(BaseModel):
+    id: int
+    text: str
+    pos: str
+    head: int
+    dep: str
+
+class SentenceParse(BaseModel):
+    text: str
+    tokens: List[Token]
+
+class AnnotationVersion(BaseModel):
+    version_id: str
+    sentence: SentenceParse
+    created_at: datetime
 
 class CreateAnnotationRequest(BaseModel):
     version: AnnotationVersion
 
 class AnnotationResponse(BaseModel):
-    annotation_id: str
-    latest_version: AnnotationVersion
+    version: AnnotationVersion
 
-class UpdateAnnotationRequest(BaseModel):
-    text: str
-
-class AnnotationVersionResponse(BaseModel):
-    version_id: str
-    sentence: SentenceParse
-    created_at: datetime
-
-class ListVersionsResponse(BaseModel):
-    versions: List[AnnotationVersion] 
+class ListAnnotationsResponse(BaseModel):
+    annotations: List[AnnotationVersion] 

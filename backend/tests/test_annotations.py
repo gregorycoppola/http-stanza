@@ -11,7 +11,10 @@ def test_create_annotation(client, redis_mock, sample_annotation):
     assert data["latest_version"]["sentence"]["text"] == sample_annotation["text"]
     
     # Check Redis keys
-    assert len(redis_mock.keys("http-stanza:annotations:*")) == 2  # annotation + versions
+    annotation_id = data["annotation_id"]
+    assert redis_mock.exists(f"http-stanza:annotations:{annotation_id}")
+    assert redis_mock.exists(f"http-stanza:annotations:{annotation_id}:versions")
+    assert redis_mock.sismember("http-stanza:annotations", annotation_id)
 
 def test_get_annotation(client, redis_mock, sample_annotation):
     # First create an annotation

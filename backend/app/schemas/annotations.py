@@ -19,4 +19,4 @@ class AnnotationVersionResponse(BaseModel):
     created_at: datetime
 
 class ListVersionsResponse(BaseModel):
-    versions: List[AnnotationVersionResponse] 
+    versions: List[AnnotationVersion] 

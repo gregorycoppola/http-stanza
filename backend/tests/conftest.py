@@ -14,6 +14,8 @@ def redis_mock():
     fake_redis = FakeRedis(decode_responses=True)
     with patch('app.core.redis.redis_client', fake_redis):
         yield fake_redis
+        # Clear all keys after each test
+        fake_redis.flushall()
 
 @pytest.fixture(scope="function")
 def sample_annotation():
